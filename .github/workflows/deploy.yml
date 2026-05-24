@@ -46,6 +46,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: app/dist
           publish_branch: gh-pages
+          keep_files: true
 
       - name: Deploy preview (dev)
         if: github.ref_name == 'dev'
