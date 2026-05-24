@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -25,13 +25,34 @@ jobs:
         run: npm ci
         working-directory: app
 
-      - name: Build
+      - name: Build (main)
+        if: github.ref_name == 'main'
         run: npm run build
+        env:
+          VITE_BASE_PATH: /volleyball-gamestats/
         working-directory: app
 
-      - name: Deploy to GitHub Pages
+      - name: Build (dev)
+        if: github.ref_name == 'dev'
+        run: npm run build
+        env:
+          VITE_BASE_PATH: /volleyball-gamestats/dev/
+        working-directory: app
+
+      - name: Deploy stable (main)
+        if: github.ref_name == 'main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: app/dist
           publish_branch: gh-pages
+
+      - name: Deploy preview (dev)
+        if: github.ref_name == 'dev'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: app/dist
+          publish_branch: gh-pages
+          destination_dir: dev
+          keep_files: true

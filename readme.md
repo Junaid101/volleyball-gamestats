@@ -88,7 +88,36 @@ $$
 │   ├── tdd-workpackages.md
 │   └── ui-design.md      # Phase 1 mobile UX direction
 ├── project-idea.md       # product brief / future direction
-└── README.md             # repo-facing overview
+└── readme.md             # repo-facing overview
+```
+
+## App flow
+
+```mermaid
+flowchart TD
+	A[Open App] --> B{Team Exists?}
+	B -- No --> C[Onboarding]
+	C --> D[Roster]
+	D --> E[New Match Setup]
+	E --> F[Live Scoring]
+
+	B -- Yes --> G[Home]
+	G --> D
+	G --> E
+	G --> H[History]
+	G --> I[Player Stats]
+
+	F --> J[Between Sets]
+	J --> F
+	F --> K[Match Summary]
+	H --> L[Match Detail]
+
+	M[(localStorage via StorageService)] --- C
+	M --- D
+	M --- E
+	M --- F
+	M --- H
+	M --- I
 ```
 
 ## Tech stack
@@ -184,11 +213,18 @@ npm run preview
 This repository is configured for GitHub Pages hosting.
 
 - the production build is generated from the app directory
-- Vite uses a repository base path of `/volleyball-gamestats/`
+- Vite base path is branch-aware:
+	- `main` uses `/volleyball-gamestats/`
+	- `dev` uses `/volleyball-gamestats/dev/`
 - deployment publishes the built `app/dist` output to the `gh-pages` branch
-- a GitHub Actions workflow runs the build and deploys on pushes to `main`
+- a GitHub Actions workflow deploys on pushes to `main` and `dev`
 
 There is also an npm deploy script in the app for manual deployment if needed.
+
+### Environments
+
+- Stable site (main): `https://junaidhossein.github.io/volleyball-gamestats/`
+- Daily/dev preview (dev): `https://junaidhossein.github.io/volleyball-gamestats/dev/`
 
 ## Static hosting and SSG basics
 
@@ -208,36 +244,7 @@ An SSG is a tool that pre-renders pages at build time, usually from templates, r
 
 This repo is not a classic static site generator project. It is a client-rendered React app that builds to static files.
 
-<<<<<<< HEAD
-- **Indoor vs beach volleyball?** Beach is 2-player, no setter role, no libero, sets to 21, completely different stats profile. Should the app support both formats, or start indoor-only? *(Lean: indoor only for Phase 1)*
-ANS: only Indoor
- 
-- **What ruleset / league?** FIVB standard is 6 subs per set; many recreational leagues use unlimited subs or custom rules. Does the app enforce rules, or just record stats? *(Lean: record-only, no rule enforcement)*
-ANS: just record stats
-
-- **Roster setup flow:** How does a user set up their team before their first match? Manual entry of player names and positions? Does position affect which stats are shown per player? *(This is the first UX flow to design)*
-manually input player's name before the match
-
-- **Opponent tracking:** At minimum, the opponent's team name is needed for match history. Do we ever track opponent stats? *(Lean: name only)*
-ANS: NO need the opponents stats 
-
-- **Attack attempts (for hitting efficiency):** Efficiency requires recording every attack attempt — kill, error, or "in play" (neither kill nor error). Is it realistic to track all three outcomes live during a fast match, or should we simplify to kills and errors only?
-ANS: It is ideal to have in play stats too but difficult to track all plays.  simplify to kills and errors only would be sufficient 
-
-- **Season / competition structure:** Do matches belong to a season or tournament, or are they standalone records? *(Lean: standalone for Phase 1, seasons in Phase 2)*
-standalone record
-
-- **Who is the stat keeper?** Is it always one designated person per match, or can anyone open the app and record? In Phase 2 with multi-user: can two people co-track the same match simultaneously?
-someone outside the coat, can be team mate, friends.....etc
-
-- **Libero rule handling:** The libero has special restrictions (no attacks above net, no serving in most rules, automatic substitution). Does the app need to model libero-specific behaviour, or just let any player record any stat?
-no libero system require for now
-
-- **Data loss risk in Phase 1:** If Phase 1 stores everything in browser local storage, clearing the browser wipes all match history. Is there a minimum export or backup mechanism needed, or is that acceptable for a prototype?
-good to have CSV like minum export 
-=======
 In practice that means:
->>>>>>> 469e370 (markdown updated)
 
 - Vite bundles the app into static assets
 - GitHub Pages serves those files
