@@ -11,7 +11,11 @@ export default function EditPlayerForm({ player, onSave, onCancel }: EditPlayerF
   return (
     <PlayerForm
       key={player.id}
-      initialValues={{ name: player.name, position: player.position }}
+      initialValues={{
+        name: player.name,
+        positions: player.positions,
+        primaryPosition: player.primaryPosition,
+      }}
       onCancel={onCancel}
       onSave={onSave}
       submitLabel="Save Changes"

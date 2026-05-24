@@ -7,7 +7,8 @@ const player: Player = {
   id: 'player-1',
   teamId: 'team-1',
   name: 'Avery Lee',
-  position: 'setter',
+  positions: ['setter'],
+    primaryPosition: 'setter',
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
 }

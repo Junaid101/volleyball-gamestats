@@ -156,7 +156,7 @@ export default function MatchSetupForm({
                   type="checkbox"
                 />
                 <span className="flex-1 text-white">{player.name}</span>
-                <span className="text-sm capitalize text-gray-400">{player.position}</span>
+                <span className="text-sm capitalize text-gray-400">{player.primaryPosition}</span>
               </label>
             )
           })}

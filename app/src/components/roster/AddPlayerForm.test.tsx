@@ -9,7 +9,7 @@ describe('AddPlayerForm', () => {
     render(<AddPlayerForm onSave={vi.fn()} onCancel={vi.fn()} />)
 
     positions.forEach((position) => {
-      expect(screen.getByRole('radio', { name: position })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: position })).toBeInTheDocument()
     })
   })
 
@@ -26,10 +26,14 @@ describe('AddPlayerForm', () => {
     render(<AddPlayerForm onSave={onSave} onCancel={vi.fn()} />)
 
     await user.type(screen.getByLabelText(/name/i), 'Jordan Kim')
-    await user.click(screen.getByRole('radio', { name: 'libero' }))
+    await user.click(screen.getByRole('checkbox', { name: 'libero' }))
     await user.click(screen.getByRole('button', { name: /save player/i }))
 
-    expect(onSave).toHaveBeenCalledWith({ name: 'Jordan Kim', position: 'libero' })
+    expect(onSave).toHaveBeenCalledWith({
+      name: 'Jordan Kim',
+      positions: ['libero'],
+      primaryPosition: 'libero',
+    })
   })
 
   it('calls onCancel when cancel is clicked', async () => {

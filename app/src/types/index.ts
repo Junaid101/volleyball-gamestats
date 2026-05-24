@@ -23,7 +23,8 @@ export interface Player {
   id: string;
   teamId: string;
   name: string;
-  position: PlayerPosition;
+  positions: PlayerPosition[];
+  primaryPosition: PlayerPosition;
   createdAt: string;
   updatedAt: string;
 }

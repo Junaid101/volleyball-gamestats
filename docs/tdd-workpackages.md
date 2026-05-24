@@ -220,6 +220,33 @@ app/src/
 - [ ] Share works in browsers with Web Share API and in browsers without it via clipboard fallback
 - [ ] Screenshot-ready layout remains usable without requiring extra export infrastructure
 
+## WP7: PWA & iOS Install Experience
+
+**Goal:** Make the app behave correctly as an installable PWA on iOS Safari, including the correct home-screen icon, reliable service worker registration, and an in-app hint guiding users through the manual iOS install flow.
+
+**Background:** iOS Safari does not fire the `beforeinstallprompt` event and never shows a native install banner. The only install path on iOS is Share → Add to Home Screen. Without an explicit in-app hint, iOS users have no indication the app is installable.
+
+**Changes made (delivered outside TDD cycle — retrofitted here for traceability):**
+
+| File | Change |
+|------|--------|
+| `app/index.html` | Fixed `<link rel="apple-touch-icon">` to reference `apple-touch-icon.png` (180 × 180 px) instead of `icons/icon-192.png` (192 × 192 px). iOS uses this exact link for the home-screen tile. |
+| `app/vite.config.ts` | Added `injectRegister: 'inline'` to the `VitePWA` plugin config so the service worker registration script is embedded directly in `index.html` and guaranteed to run on every page load. |
+| `app/src/components/iOSInstallBanner.tsx` | New component. Detects iOS Safari (`/iphone\|ipad\|ipod/i` UA + `/safari/i` + no Chrome/Firefox), checks `navigator.standalone` to skip already-installed sessions, and shows a dismissible bottom-sheet: *"Tap ⎋ then Add to Home Screen"*. Dismissal is persisted to `localStorage` under key `vgs_ios_install_dismissed`. |
+| `app/src/App.tsx` | Mounted `<IOSInstallBanner />` inside `BrowserRouter` so it has router context if needed and renders on all routes. |
+
+**Tests to add (RED phase):**
+- test: `IOSInstallBanner` renders when iOS Safari UA is present, `navigator.standalone` is false, and the dismissed flag is absent
+- test: `IOSInstallBanner` does not render when `navigator.standalone` is true (already installed)
+- test: `IOSInstallBanner` does not render when the dismissed flag is set in localStorage
+- test: clicking the close button sets the dismissed flag and hides the banner
+
+**Acceptance criteria:**
+- [ ] All tests pass
+- [ ] `apple-touch-icon` in built `index.html` resolves to the 180 × 180 asset
+- [ ] Service worker registration script appears inline in the built `index.html`
+- [ ] Banner is visible on first load in iOS Safari and hidden after dismissal or after install
+
 ## Important design decisions to carry through implementation
 
 1. **Storage provider wiring:** `App` should wrap the router tree with `StorageProvider`, passing a `LocalStorageService` instance by default and allowing tests to inject an alternate `StorageService`.

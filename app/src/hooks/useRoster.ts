@@ -55,7 +55,8 @@ export function useRoster() {
         id: createId(),
         teamId: team.id,
         name: player.name,
-        position: player.position,
+        positions: player.positions,
+        primaryPosition: player.primaryPosition,
         createdAt: timestamp,
         updatedAt: timestamp,
       })

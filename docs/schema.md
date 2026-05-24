@@ -12,10 +12,18 @@
 - `id: string` — UUID-style identifier
 - `teamId: string` — owning team identifier
 - `name: string` — player name
-- `position: 'outside' | 'opposite' | 'middle' | 'setter' | 'libero' | 'defensive'`
+- `positions: Array<'outside' | 'opposite' | 'middle' | 'setter' | 'libero' | 'defensive'>` — one or more playable positions
+- `primaryPosition: 'outside' | 'opposite' | 'middle' | 'setter' | 'libero' | 'defensive'` — default display/sorting position
 - `createdAt: string` — ISO timestamp
 - `updatedAt: string` — ISO timestamp
 
+### PlayerPosition
+- `playerId: string` — player identifier
+- `position: 'outside' | 'opposite' | 'middle' | 'setter' | 'libero' | 'defensive'`
+- `isPrimary: boolean` — whether this is the player's default position
+- `createdAt: string` — ISO timestamp
+- `updatedAt: string` — ISO timestamp
+ 
 ### Match
 - `id: string` — UUID-style identifier
 - `teamId: string` — team that owns the match record
@@ -93,11 +101,19 @@ CREATE TABLE players (
     id UUID PRIMARY KEY,
     team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE player_positions (
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     position TEXT NOT NULL CHECK (
         position IN ('outside', 'opposite', 'middle', 'setter', 'libero', 'defensive')
     ),
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (player_id, position)
 );
 
 CREATE TABLE matches (
@@ -145,6 +161,11 @@ CREATE TABLE player_set_stats (
 );
 
 CREATE INDEX idx_players_team_id ON players(team_id);
+CREATE INDEX idx_player_positions_player_id ON player_positions(player_id);
+CREATE INDEX idx_player_positions_position ON player_positions(position);
+CREATE UNIQUE INDEX ux_player_positions_one_primary_per_player
+    ON player_positions(player_id)
+    WHERE is_primary = TRUE;
 CREATE INDEX idx_matches_team_id_match_date ON matches(team_id, match_date DESC);
 CREATE INDEX idx_match_sets_match_id_set_number ON match_sets(match_id, set_number);
 CREATE INDEX idx_player_set_stats_player_id ON player_set_stats(player_id);
@@ -154,6 +175,7 @@ CREATE INDEX idx_player_set_stats_set_id ON player_set_stats(set_id);
 ## Design decisions
 
 - **Normalized stats model:** `Match`, `MatchSet`, and `PlayerSetStats` are separate entities so per-set performance can be aggregated cleanly into match and season summaries.
+- **Multi-position players:** positions are normalized into `PlayerPosition`/`player_positions`, allowing each player to hold multiple valid positions while enforcing at most one primary position.
 - **Async storage contract:** every storage method returns a `Promise`, allowing a Phase 2 REST-backed implementation without changing React call sites.
 - **UUID-style string IDs everywhere:** consistent with client-side ID generation now and API/database IDs later.
 - **Cascade cleanup in Phase 1:** deleting a player removes their stat lines, and deleting a match removes its sets and stat rows to avoid orphaned records.

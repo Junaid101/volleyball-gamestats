@@ -1,7 +1,7 @@
 import type { Player, PlayerSeasonStats } from '../../types'
 import { formatHittingEfficiency, getEfficiencyColorClass } from '../../utils/matchUtils'
 
-function formatPosition(position: Player['position']) {
+function formatPosition(position: Player['primaryPosition']) {
   return position.replace('_', ' ')
 }
 
@@ -19,7 +19,7 @@ export default function PlayerSeasonStatsCard({ player, stats }: { player: Playe
           <p className={`mt-1 text-2xl font-bold ${efficiencyColor}`}>{efficiencyText}</p>
         </div>
         <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
-          {formatPosition(player.position)}
+          {formatPosition(player.primaryPosition)}
         </span>
       </div>
 

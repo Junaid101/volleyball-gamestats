@@ -8,6 +8,7 @@ import {
   useLocation,
 } from 'react-router-dom'
 import BottomNav from './components/layout/BottomNav'
+import IOSInstallBanner from './components/iOSInstallBanner'
 import { StorageProvider } from './context/StorageContext'
 import { useStorage } from './hooks/useStorage'
 import BetweenSetsScreen from './screens/BetweenSetsScreen'
@@ -101,6 +102,7 @@ export default function App() {
     <StorageProvider>
       <BrowserRouter basename={routerBase}>
         <AppRoutes />
+        <IOSInstallBanner />
       </BrowserRouter>
     </StorageProvider>
   )

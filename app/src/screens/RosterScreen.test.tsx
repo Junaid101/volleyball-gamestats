@@ -18,7 +18,8 @@ const playerOne: Player = {
   id: 'player-1',
   teamId: 'team-1',
   name: 'Avery Lee',
-  position: 'outside',
+  positions: ['outside'],
+    primaryPosition: 'outside',
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
 }
@@ -27,7 +28,8 @@ const playerTwo: Player = {
   id: 'player-2',
   teamId: 'team-1',
   name: 'Jordan Kim',
-  position: 'setter',
+  positions: ['setter'],
+    primaryPosition: 'setter',
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
 }
@@ -88,7 +90,7 @@ describe('RosterScreen', () => {
 
     await user.click(await screen.findByRole('button', { name: /add player/i }))
     await user.type(screen.getByLabelText(/name/i), 'Casey Reed')
-    await user.click(screen.getByRole('radio', { name: 'middle' }))
+    await user.click(screen.getByRole('checkbox', { name: 'middle' }))
     await user.click(screen.getByRole('button', { name: /save player/i }))
 
     expect(await screen.findByText('Casey Reed')).toBeInTheDocument()
@@ -105,7 +107,7 @@ describe('RosterScreen', () => {
     await user.click(await screen.findByRole('button', { name: /edit avery lee/i }))
 
     expect(screen.getByDisplayValue('Avery Lee')).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'outside' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'outside' })).toBeChecked()
   })
 
   it('submitting edit form updates player in list', async () => {
@@ -124,7 +126,8 @@ describe('RosterScreen', () => {
     await user.click(await screen.findByRole('button', { name: /edit avery lee/i }))
     await user.clear(screen.getByLabelText(/name/i))
     await user.type(screen.getByLabelText(/name/i), 'Avery Stone')
-    await user.click(screen.getByRole('radio', { name: 'libero' }))
+    await user.click(screen.getByRole('checkbox', { name: 'outside' }))
+    await user.click(screen.getByRole('checkbox', { name: 'libero' }))
     await user.click(screen.getByRole('button', { name: /save changes/i }))
 
     expect(await screen.findByText('Avery Stone')).toBeInTheDocument()

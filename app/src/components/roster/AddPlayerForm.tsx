@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Player, PlayerPosition } from '../../types'
 import { POSITION_OPTIONS } from './constants'
 
-export type PlayerFormValues = Pick<Player, 'name' | 'position'>
+export type PlayerFormValues = Pick<Player, 'name' | 'positions' | 'primaryPosition'>
 
 type PlayerFormProps = {
   title?: string
@@ -20,20 +20,31 @@ export function PlayerForm({
   onCancel,
 }: PlayerFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '')
-  const [position, setPosition] = useState<PlayerPosition | ''>(initialValues?.position ?? '')
+  const [positions, setPositions] = useState<PlayerPosition[]>(initialValues?.positions ?? [])
 
-  const isValid = useMemo(() => name.trim().length > 0 && position !== '', [name, position])
+  const isValid = useMemo(() => name.trim().length > 0 && positions.length > 0, [name, positions])
+
+  const togglePosition = (option: PlayerPosition) => {
+    setPositions((current) => {
+      if (current.includes(option)) {
+        return current.filter((value) => value !== option)
+      }
+
+      return [...current, option]
+    })
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!isValid || position === '') {
+    if (!isValid || positions.length === 0) {
       return
     }
 
     await onSave({
       name: name.trim(),
-      position,
+      positions,
+      primaryPosition: positions[0],
     })
   }
 
@@ -42,7 +53,7 @@ export function PlayerForm({
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold text-white">{title}</h2>
-          <p className="mt-1 text-sm text-gray-400">Add the player name and choose a position.</p>
+          <p className="mt-1 text-sm text-gray-400">Add the player name and choose one or more positions.</p>
         </div>
 
         <div>
@@ -59,10 +70,10 @@ export function PlayerForm({
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-white">Position</legend>
+          <legend className="mb-2 text-sm font-medium text-white">Positions</legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {POSITION_OPTIONS.map((option) => {
-              const selected = option === position
+              const selected = positions.includes(option)
 
               return (
                 <label
@@ -76,9 +87,9 @@ export function PlayerForm({
                   <input
                     checked={selected}
                     className="sr-only"
-                    name="player-position"
-                    onChange={() => setPosition(option)}
-                    type="radio"
+                    name="player-positions"
+                    onChange={() => togglePosition(option)}
+                    type="checkbox"
                     value={option}
                   />
                   <span>{option}</span>
@@ -86,6 +97,9 @@ export function PlayerForm({
               )
             })}
           </div>
+          {positions.length > 0 ? (
+            <p className="mt-2 text-xs text-gray-400">Primary position: {positions[0]}</p>
+          ) : null}
         </fieldset>
 
         <div className="flex gap-3">

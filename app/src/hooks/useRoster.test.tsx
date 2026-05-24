@@ -16,7 +16,8 @@ const existingPlayer: Player = {
   id: 'player-1',
   teamId: 'team-1',
   name: 'Avery Lee',
-  position: 'outside',
+  positions: ['outside'],
+    primaryPosition: 'outside',
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
 }
@@ -53,11 +54,13 @@ describe('useRoster', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await act(async () => {
-      await result.current.addPlayer({ name: 'Jordan Kim', position: 'setter' })
+      await result.current.addPlayer({ name: 'Jordan Kim', positions: ['setter'],
+    primaryPosition: 'setter' })
     })
 
     await waitFor(() => expect(result.current.players).toHaveLength(1))
-    expect(result.current.players[0]).toMatchObject({ name: 'Jordan Kim', position: 'setter', teamId: 'team-1' })
+    expect(result.current.players[0]).toMatchObject({ name: 'Jordan Kim', positions: ['setter'],
+    primaryPosition: 'setter', teamId: 'team-1' })
     expect(mockStorage.savePlayer).toHaveBeenCalledTimes(1)
   })
 

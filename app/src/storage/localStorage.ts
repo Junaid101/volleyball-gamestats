@@ -3,6 +3,7 @@ import type {
   MatchSet,
   MatchSummary,
   Player,
+  PlayerPosition,
   PlayerSeasonStats,
   PlayerSetStats,
   PlayerSetStatsSummary,
@@ -20,6 +21,10 @@ const STORAGE_KEYS = {
 } as const;
 
 type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
+
+type StoredPlayer = Player & {
+  position?: PlayerPosition;
+};
 
 const createEmptyTotals = (): StatTotals => ({
   kills: 0,
@@ -44,6 +49,20 @@ const calculateHittingEfficiency = (
   }
 
   return (kills - attackErrors) / attackAttempts;
+};
+
+const normalizePlayerPositions = (
+  positions: PlayerPosition[] | undefined,
+  fallbackPosition?: PlayerPosition,
+): PlayerPosition[] => {
+  const source = positions ?? (fallbackPosition ? [fallbackPosition] : []);
+  const deduped = Array.from(new Set(source));
+
+  if (deduped.length > 0) {
+    return deduped;
+  }
+
+  return ['outside'];
 };
 
 export class LocalStorageService implements StorageService {
@@ -113,6 +132,19 @@ export class LocalStorageService implements StorageService {
     };
   }
 
+  private normalizePlayer(player: StoredPlayer): Player {
+    const positions = normalizePlayerPositions(player.positions, player.position);
+    const primaryPosition = positions.includes(player.primaryPosition)
+      ? player.primaryPosition
+      : positions[0];
+
+    return {
+      ...player,
+      positions,
+      primaryPosition,
+    };
+  }
+
   private getAllSets(): MatchSet[] {
     return this.readValue<MatchSet[]>(STORAGE_KEYS.sets, []);
   }
@@ -130,12 +162,13 @@ export class LocalStorageService implements StorageService {
   }
 
   async getPlayers(): Promise<Player[]> {
-    return this.readValue<Player[]>(STORAGE_KEYS.players, []);
+    const players = this.readValue<StoredPlayer[]>(STORAGE_KEYS.players, []);
+    return players.map((player) => this.normalizePlayer(player));
   }
 
   async savePlayer(player: Player): Promise<void> {
     const players = await this.getPlayers();
-    this.writeValue(STORAGE_KEYS.players, this.upsertById(players, player));
+    this.writeValue(STORAGE_KEYS.players, this.upsertById(players, this.normalizePlayer(player)));
   }
 
   async deletePlayer(id: string): Promise<void> {

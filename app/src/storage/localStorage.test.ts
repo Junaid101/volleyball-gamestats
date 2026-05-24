@@ -19,7 +19,8 @@ function createPlayer(overrides: Partial<Player> = {}): Player {
     id: 'player-1',
     teamId: 'team-1',
     name: 'Alice',
-    position: 'setter',
+    positions: ['setter'],
+    primaryPosition: 'setter',
     createdAt: timestamp,
     updatedAt: timestamp,
     ...overrides,
@@ -129,7 +130,8 @@ describe('LocalStorageService', () => {
     it('savePlayer updates existing player (same id)', async () => {
       const svc = new LocalStorageService()
       const player = createPlayer()
-      const updatedPlayer = createPlayer({ name: 'Updated Alice', position: 'outside' })
+      const updatedPlayer = createPlayer({ name: 'Updated Alice', positions: ['outside'],
+    primaryPosition: 'outside' })
 
       await svc.savePlayer(player)
       await svc.savePlayer(updatedPlayer)

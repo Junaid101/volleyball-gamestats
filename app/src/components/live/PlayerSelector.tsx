@@ -7,7 +7,7 @@ type PlayerSelectorProps = {
   onChange: (id: string) => void
 }
 
-function positionLabel(position: Player['position']) {
+function positionLabel(position: Player['primaryPosition']) {
   return position.replace('_', ' ')
 }
 
@@ -32,7 +32,7 @@ export default function PlayerSelector({ players, selectedId, onChange }: Player
         <span className="flex items-center gap-3">
           <span className="text-lg font-semibold">{selectedPlayer.name}</span>
           <span className="rounded-full bg-indigo-500/20 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-200">
-            {positionLabel(selectedPlayer.position)}
+            {positionLabel(selectedPlayer.primaryPosition)}
           </span>
         </span>
         <span aria-hidden="true" className="text-gray-400">
@@ -60,7 +60,7 @@ export default function PlayerSelector({ players, selectedId, onChange }: Player
                 >
                   <span className="font-medium">{player.name}</span>
                   <span className="rounded-full bg-black/20 px-2 py-1 text-xs uppercase tracking-wide">
-                    {positionLabel(player.position)}
+                    {positionLabel(player.primaryPosition)}
                   </span>
                 </button>
               ))}
