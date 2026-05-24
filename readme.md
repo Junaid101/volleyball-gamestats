@@ -66,14 +66,19 @@ These follow directly from the live scoring use case:
 
 ## Phases
 
-### Phase 1 — Web Prototype
+### Phase 1 — Web Prototype (React PWA)
 
-A browser-based web app with **no backend**. All data is stored locally in the browser (`localStorage` or `IndexedDB`). No user accounts, no sync.
+A React app with no backend, hosted on GitHub Pages. All data is stored in `localStorage`. Built as a PWA so it can be installed on a phone home screen — this makes it usable courtside and provides a real mobile test before committing to a native app.
+
+**Stack:**
+- React (UI)
+- `localStorage` for persistence, accessed only through a storage abstraction layer
+- PWA manifest + service worker for home screen install
+- GitHub Pages for hosting
 
 **Goals:**
 - Validate the live scoring UX — does it actually work courtside?
 - Prove out the data model (Match, Set, Team, Player, per-set stats)
-- Clarify what a backend would actually need to do
 - Build something you can take to a real match and test
 
 **Scope:**
@@ -81,60 +86,92 @@ A browser-based web app with **no backend**. All data is stored locally in the b
 - Start a match, record set scores and per-player stats live
 - View match history and player stat summaries
 - Basic shareable match summary (screenshot-ready layout)
+- Indoor format only; no rule enforcement — record stats freely
 - Single-user only — one device, one team
 
 ---
 
-### Phase 2 — Cross-Platform Mobile App
+### Phase 2 — Cross-Platform Mobile App (Rebuild)
 
-A production mobile app for Android and iOS, built on what was learned in Phase 1.
+A production mobile app for Android and iOS, rebuilt from scratch using a mobile-first stack. Phase 1 code is not carried over — only the data model and UX learnings are.
 
 **Goals:**
 - Ship a polished, native-feeling mobile experience
 - Support a team: one person records, everyone can view
 - Offline-first with background sync
 
+**Stack:**
+- React Native or Flutter (to be decided after Phase 1)
+- REST API backend
+- Relational database (schema derived from the Phase 1 data model)
+
 **Scope:**
 - Everything from Phase 1, rebuilt for mobile
-- Team accounts: one team, multiple members
+- Team accounts: email + password + 2FA login; join a team via a regeneratable team code
 - One designated recorder per match; other team members can view in real time
-- Offline-first; sync when connection is restored
+- Offline-first; data syncs in the background when connection is restored
+- Optimistic updates with server-side conflict resolution
 - CSV export for coaches
 
 ---
 
 ## Architecture
 
-- **Phase 1:** Frontend only. No backend. Browser storage.
-- **Phase 2:** Separate frontend (mobile) and backend (API + database).
-  - Backend: likely a simple REST API
-  - Database: relational (matches, sets, players, stats) — schema to be defined
-  - Auth: team-code or invite-based (no heavy account system needed)
-  - Sync: offline-first with background sync on reconnect
+### Phase 1
+
+```
+Browser (React PWA)
+  └── UI Components
+  └── Storage Service  ← abstraction layer; swappable in Phase 2
+        └── localStorage
+```
+
+The storage service is the only place that touches `localStorage`. Everything else in the app calls the service. This makes the Phase 2 migration to an API-backed service a localised change.
+
+### Phase 2
+
+```
+Mobile App (React Native or Flutter)
+  └── UI Components
+  └── Storage Service  ← same interface, now backed by API + local cache
+        └── Local cache (offline-first)
+        └── REST API  ←→  Backend
+                           └── Database (relational)
+```
+
+**Auth:** Email + password + 2FA. Users join a team via a team code (regeneratable by the team owner). No OAuth.
 
 ---
 
 ## Phase 1 → Phase 2 Continuity
 
-### Option A — Evolve the Phase 1 codebase
+**Decision: Option B — Rebuild.**
 
-Continue with the same stack. If Phase 1 is in React, use React Native for Phase 2, sharing business logic (data model, stat calculations, storage layer).
+Phase 1 is a throwaway prototype. The Phase 2 mobile app is built from scratch with a mobile-first stack. What carries over:
 
-**Pros:** Code reuse, shared data model, faster ramp-up
-**Cons:** Web and native UX paradigms are genuinely different. A UI built for browser will need significant rework to feel native. Risk of a mediocre experience on both.
+- The **data model** (`Match`, `Set`, `Team`, `Player`, `PlayerSetStats`) — defined before Phase 1 development starts and treated as a stable contract
+- UX patterns validated in Phase 1 (which flows worked, what was awkward courtside)
+- The **storage service interface** — Phase 2 implements the same interface against an API instead of `localStorage`
 
-### Option B — Rebuild for Phase 2
+What does not carry over: React components, routing, styling, or any browser-specific code.
 
-Treat Phase 1 as a throwaway prototype. Carry over the data model and UX learnings but rewrite from scratch using a mobile-first stack (Flutter, or React Native as a greenfield project).
+---
 
-**Pros:** Clean slate, purpose-built for mobile, no accumulated web debt
-**Cons:** More upfront effort, some duplication
+## Future Product Features
 
-### Current lean
+Ideas worth noting for after Phase 2 ships — not in scope now, but they inform design decisions:
 
-The most important output of Phase 1 is the **data model** and the **UX validation** — not the code itself. If Phase 1 is in React, a React Native rebuild is low friction. If the Phase 1 UI turns out to be substantially wrong for mobile (which is likely), Option B is probably correct anyway.
-
-The data model should be defined and documented independently of Phase 1 code, so it can survive a rebuild.
+- **Beach volleyball format** — 2-player teams, sets to 21, no libero/setter roles; a separate recording mode, not a configuration option
+- **Season and tournament management** — group matches into a season or bracket; season standings, win/loss record, aggregate player stats over a season
+- **Opponent scouting** — build a profile of recurring opponents across matches; track their tendencies over time
+- **Rotation tracking** — know which serve rotation the team is in during a set; useful for post-match tactical review
+- **Serve receive heatmap** — visualise which zones on the court are targeted and how reception performs by zone
+- **Set-by-set momentum charts** — show point run data within a set to identify turning points
+- **Match video linking** — attach a recording URL to a match and timestamp key events to the video
+- **Coaching notes** — free-text notes per match or per set, visible only to the coach/captain
+- **Push notifications** (Phase 2+) — notify teammates when a match starts or when they're on deck to serve
+- **Wearable companion** — Apple Watch or equivalent for single-tap stat entry, removing the need to look at the phone
+- **Public team pages** — opt-in shareable page showing a team's season stats; useful for club websites
 
 ---
 
@@ -171,14 +208,9 @@ good to have CSV like minum export
 
 ## Open Technical Questions
 
-- **Phase 1 stack:** React with `localStorage` for persistent local storage. Build as a PWA so it can be added to the phone home screen — this brings Phase 1 much closer to a real mobile experience and is a useful test before committing to a native Phase 2.
-- **Phase 1 → Phase 2 continuity:** Rebuild (Option B). The most important carry-over is the data model and UX learnings, not the code.
-- **Mobile framework for Phase 2:** React Native or Flutter — to be decided after Phase 1 learnings. Both are viable.
-- **Backend:** Phase 2 only. However, Phase 1 should use a clean abstraction layer — all data reads/writes go through a storage service module. In Phase 1 that module uses `localStorage`; in Phase 2 it can be swapped for API calls without touching the rest of the app.
-- **Auth:** Email + password + 2FA for account creation. Team joining via a team code (regeneratable). No OAuth for now — keep it simple.
-- **Data model:** Must be defined and documented before Phase 1 development starts. Core entities: `Match`, `Set`, `Team`, `Player`, `PlayerSetStats`. This spec should survive the Phase 2 rebuild.
-- **State management:** Local state is fine for Phase 1. Phase 2 will use standard optimistic update patterns with conflict resolution on sync.
-- **Hosting for Phase 1:** GitHub Pages — static assets only, all state lives locally in the browser. Works well with the PWA approach.
-- **PWA scope:** If Phase 1 is a PWA installable on a phone home screen, how much of the mobile UX should it replicate? Does this affect how much Phase 2 actually needs to be a native app, or could a polished PWA be sufficient?
-- **Storage abstraction design:** What does the storage service interface look like? Needs to be designed early so it doesn't leak `localStorage` specifics into the rest of the app.
+- **Mobile framework for Phase 2:** React Native or Flutter? Both are viable. Decision deferred until Phase 1 UX is validated — the choice matters less than getting the data model right first.
+- **PWA ceiling:** Phase 1 is a PWA installable on a phone home screen. If the PWA experience turns out to be good enough, does Phase 2 still need to be a native app? Define the threshold (e.g. push notifications, background sync, app store distribution) that would trigger a native build.
+- **Storage abstraction interface:** The service interface needs to be designed before Phase 1 coding starts. It should be async-first (so the Phase 2 API implementation doesn't require changing call sites) and should not expose any `localStorage`-specific concepts.
+- **Conflict resolution strategy for Phase 2:** If a match is edited on two devices while offline, how is the conflict resolved on sync? Last-write-wins is simplest; event-log / CRDT approach is more correct but significantly more complex.
+
 
