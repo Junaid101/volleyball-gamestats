@@ -141,14 +141,31 @@ The data model should be defined and documented independently of Phase 1 code, s
 ## Open Product Questions
 
 - **Indoor vs beach volleyball?** Beach is 2-player, no setter role, no libero, sets to 21, completely different stats profile. Should the app support both formats, or start indoor-only? *(Lean: indoor only for Phase 1)*
+ANS: only Indoor
+ 
 - **What ruleset / league?** FIVB standard is 6 subs per set; many recreational leagues use unlimited subs or custom rules. Does the app enforce rules, or just record stats? *(Lean: record-only, no rule enforcement)*
+ANS: just record stats
+
 - **Roster setup flow:** How does a user set up their team before their first match? Manual entry of player names and positions? Does position affect which stats are shown per player? *(This is the first UX flow to design)*
+manually input player's name before the match
+
 - **Opponent tracking:** At minimum, the opponent's team name is needed for match history. Do we ever track opponent stats? *(Lean: name only)*
+ANS: NO need the opponents stats 
+
 - **Attack attempts (for hitting efficiency):** Efficiency requires recording every attack attempt — kill, error, or "in play" (neither kill nor error). Is it realistic to track all three outcomes live during a fast match, or should we simplify to kills and errors only?
+ANS: It is ideal to have in play stats too but difficult to track all plays.  simplify to kills and errors only would be sufficient 
+
 - **Season / competition structure:** Do matches belong to a season or tournament, or are they standalone records? *(Lean: standalone for Phase 1, seasons in Phase 2)*
+standalone record
+
 - **Who is the stat keeper?** Is it always one designated person per match, or can anyone open the app and record? In Phase 2 with multi-user: can two people co-track the same match simultaneously?
+someone outside the coat, can be team mate, friends.....etc
+
 - **Libero rule handling:** The libero has special restrictions (no attacks above net, no serving in most rules, automatic substitution). Does the app need to model libero-specific behaviour, or just let any player record any stat?
+no libero system require for now
+
 - **Data loss risk in Phase 1:** If Phase 1 stores everything in browser local storage, clearing the browser wipes all match history. Is there a minimum export or backup mechanism needed, or is that acceptable for a prototype?
+good to have CSV like minum export 
 
 ---
 
