@@ -4,15 +4,12 @@
     <meta charset="utf-8" />
     <title>Volleyball GameStats</title>
     <script>
-      // SPA redirect trick for GitHub Pages.
-      // Supports both /volleyball-gamestats/ (main, depth 1) and
-      // /volleyball-gamestats/dev/ (dev preview, depth 2).
+      // SPA redirect trick for GitHub Pages
       var l = window.location;
-      var depth = l.pathname.indexOf('/volleyball-gamestats/dev/') === 0 ? 2 : 1;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + depth).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(depth).join('/').replace(/&/g, '~and~') +
+        l.pathname.split('/').slice(0, 1 + 1).join('/') + '/?/' +
+        l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
         (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
         l.hash
       );
