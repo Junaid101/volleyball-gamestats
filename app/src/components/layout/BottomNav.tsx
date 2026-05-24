@@ -13,7 +13,7 @@ export default function BottomNav({ hide = false }: { hide?: boolean }) {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-gray-800 bg-gray-900/95 backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-gray-800 bg-gray-900/95 backdrop-blur pb-safe">
       <ul className="mx-auto grid max-w-screen-sm grid-cols-4 gap-2 px-2 py-3 text-xs">
         {navItems.map((item) => (
           <li key={item.to}>

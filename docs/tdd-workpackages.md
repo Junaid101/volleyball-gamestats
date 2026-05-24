@@ -247,6 +247,59 @@ app/src/
 - [ ] Service worker registration script appears inline in the built `index.html`
 - [ ] Banner is visible on first load in iOS Safari and hidden after dismissal or after install
 
+## WP8: iOS Safe Area / Dynamic Island Layout
+
+**Goal:** Ensure the app respects iOS safe area insets in PWA standalone mode so content never overlaps the Dynamic Island (top) or home indicator (bottom).
+
+**Background:** `viewport-fit=cover` is already set in `index.html` — this is correct and prevents white letterbox bars. However it also means the browser will not automatically add padding; the app must apply `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)` itself. Without this, in standalone PWA mode the top of the app collides with the Dynamic Island.
+
+**Files to change (no tests required — UI layout only):**
+
+| File | Change |
+|------|--------|
+| `app/src/index.css` | Add `padding-top: env(safe-area-inset-top)` to `body` so it propagates globally. Define `@utility pt-safe` and `pb-safe` helpers for Tailwind v4. |
+| `app/src/App.tsx` — `MainLayout` | Change `pt-6` to `pt-safe` on the content wrapper div so the top padding stacks on top of the safe area. |
+| `app/src/components/layout/BottomNav.tsx` | Add `pb-safe` (padding-bottom safe area) to the `<nav>` element so the nav bar sits above the home indicator. Also increase the `pb-24` on `MainLayout`'s content wrapper to account for nav + home indicator. |
+| Full-screen route wrappers (e.g. `LiveScoringScreen`, `NewMatchScreen`, `OnboardingScreen`) | Add `pt-safe` to their top-level wrappers so they also clear the Dynamic Island. |
+
+**Acceptance criteria:**
+- [ ] In PWA standalone mode on iPhone 14 Pro / 15 (Dynamic Island), no content is obscured at the top
+- [ ] Bottom nav sits above the home indicator bar — no overlap
+- [ ] On non-notched iPhones and Android, insets resolve to `0` and layout is unchanged
+- [ ] On desktop/non-iOS browsers, layout is visually identical to before
+
+## WP9: Set Score Editing
+
+**Goal:** Allow users to correct set scores from the match detail screen. Each set row gets an inline edit mode with `+` and `−` steppers. The minus button is only visible in edit mode.
+
+**Design decisions:**
+- Tapping "Edit" on a set row opens that row in-place into an edit mode — no modal or separate screen.
+- Only one set row can be in edit mode at a time; opening a new row closes the previous one.
+- Scores cannot go below 0.
+- Saving writes back through `StorageService.saveSet()` and re-derives the winner from the new scores.
+- Cancel discards unsaved changes (edit state is local only, not derived from an effect — follows `rerender-derived-state-no-effect`).
+- The `SetScoreEditor` is extracted as a named component per `rerender-no-inline-components`.
+- Functional `setState` is used for all increment/decrement per `rerender-functional-setstate`.
+
+**Files to create/modify:**
+- `app/src/components/history/SetScoreEditor.tsx` — new component: stepper inputs for ourScore and opponentScore, Save and Cancel buttons
+- `app/src/screens/MatchDetailScreen.tsx` — add edit state, pass down to set score table rows, re-fetch summary after save
+
+**Tests to write (RED phase):**
+- test: clicking Edit on a set row shows `+` and `−` buttons and input values
+- test: `−` button decrements the score and is disabled at 0
+- test: `+` button increments the score
+- test: clicking Save calls `saveSet` with updated scores and re-derived winner
+- test: clicking Cancel restores the original scores and hides edit controls
+- test: only one set row is in edit mode at a time
+
+**Acceptance criteria:**
+- [ ] All tests pass
+- [ ] `−` button only appears in edit mode
+- [ ] Scores cannot go below 0
+- [ ] Saving persists to storage and the displayed score updates without a full page reload
+- [ ] Cancelling leaves scores unchanged
+
 ## Important design decisions to carry through implementation
 
 1. **Storage provider wiring:** `App` should wrap the router tree with `StorageProvider`, passing a `LocalStorageService` instance by default and allowing tests to inject an alternate `StorageService`.

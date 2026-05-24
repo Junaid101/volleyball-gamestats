@@ -1,13 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import SetScoreEditor from '../components/history/SetScoreEditor'
 import { useMatchDetail } from '../hooks/useMatchDetail'
-import type { PlayerSetStatsSummary, StatTotals } from '../types'
+import type { MatchSet, PlayerSetStatsSummary, StatTotals } from '../types'
 import {
   formatHittingEfficiency,
   formatMatchDate,
   getEfficiencyColorClass,
   getMatchResult,
 } from '../utils/matchUtils'
+import { useStorage } from '../hooks/useStorage'
 
 type PlayerMatchStatsRow = StatTotals & {
   playerId: string
@@ -62,7 +64,9 @@ function aggregatePlayerStats(stats: PlayerSetStatsSummary[], playersById: Map<s
 
 export default function MatchDetailScreen() {
   const { matchId = '' } = useParams()
-  const { summary, players, loading } = useMatchDetail(matchId)
+  const storage = useStorage()
+  const { summary, players, loading, refresh } = useMatchDetail(matchId)
+  const [editingSetId, setEditingSetId] = useState<string | null>(null)
 
   const playersById = useMemo(() => new Map(players.map((player) => [player.id, player.name])), [players])
   const playerRows = useMemo(
@@ -81,6 +85,12 @@ export default function MatchDetailScreen() {
   const result = getMatchResult(summary.sets)
   const badgeClass = result === 'win' ? 'bg-green-600 text-white' : result === 'loss' ? 'bg-red-600 text-white' : 'bg-gray-700 text-white'
   const badgeLabel = result === 'win' ? 'W' : result === 'loss' ? 'L' : 'IP'
+
+  const handleSaveSet = async (updated: MatchSet) => {
+    await storage.saveSet(updated)
+    setEditingSetId(null)
+    refresh()
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 px-4 py-6 text-white">
@@ -117,15 +127,36 @@ export default function MatchDetailScreen() {
                   <th className="pb-3 pr-4">Us</th>
                   <th className="pb-3 pr-4">Them</th>
                   <th className="pb-3">Winner</th>
+                  <th className="pb-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {summary.sets.map((set) => (
                   <tr className="border-t border-gray-700" data-testid="set-row" key={set.id}>
-                    <td className="py-3 pr-4">{set.setNumber}</td>
-                    <td className="py-3 pr-4">{set.ourScore}</td>
-                    <td className="py-3 pr-4">{set.opponentScore}</td>
-                    <td className="py-3">{set.ourScore > set.opponentScore ? 'Us' : set.opponentScore > set.ourScore ? 'Them' : '—'}</td>
+                    {editingSetId === set.id ? (
+                      <SetScoreEditor
+                        set={set}
+                        onSave={handleSaveSet}
+                        onCancel={() => setEditingSetId(null)}
+                      />
+                    ) : (
+                      <>
+                        <td className="py-3 pr-4">{set.setNumber}</td>
+                        <td className="py-3 pr-4">{set.ourScore}</td>
+                        <td className="py-3 pr-4">{set.opponentScore}</td>
+                        <td className="py-3">{set.ourScore > set.opponentScore ? 'Us' : set.opponentScore > set.ourScore ? 'Them' : '—'}</td>
+                        <td className="py-3 pl-4">
+                          <button
+                            aria-label={`Edit set ${set.setNumber}`}
+                            className="rounded px-2 py-1 text-xs text-gray-400 transition hover:text-white"
+                            onClick={() => setEditingSetId(set.id)}
+                            type="button"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

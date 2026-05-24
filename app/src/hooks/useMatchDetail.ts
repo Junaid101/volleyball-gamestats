@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { MatchSummary, Player } from '../types'
 import { useStorage } from './useStorage'
 
@@ -7,6 +7,9 @@ export function useMatchDetail(matchId: string) {
   const [summary, setSummary] = useState<MatchSummary | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
+  const [tick, setTick] = useState(0)
+
+  const refresh = useCallback(() => setTick((n) => n + 1), [])
 
   useEffect(() => {
     let active = true
@@ -48,11 +51,12 @@ export function useMatchDetail(matchId: string) {
     return () => {
       active = false
     }
-  }, [matchId, storage])
+  }, [matchId, storage, tick])
 
   return {
     summary,
     players,
     loading,
+    refresh,
   }
 }
