@@ -1,182 +1,214 @@
 # Volleyball GameStats
 
-A courtside tool for tracking volleyball match statistics — set scores, player performance, and season history — built for recreational and club-level teams.
+Volleyball GameStats is a courtside-first stats tracker for recreational and club volleyball teams. The current repository is a Phase 1 web prototype: a mobile-friendly React app for recording live match stats, reviewing match history, and tracking player performance over time.
 
----
+It is built to answer one practical question first: can one person reliably track meaningful volleyball stats live, from the sideline, on a phone?
 
-## Target User
+## Why this repo exists
 
-**Primary:** A player, team captain, or bench player in a recreational or semi-competitive club team. They want to track their team's performance across a season without using a complex platform. They will be running the app courtside, probably one-handed, during a live match.
+Most volleyball stat tools are either too heavyweight for casual club teams or too limited to be useful during a real match. This project focuses on a narrower problem:
 
-**Secondary:** A coach who wants to review match results and individual player contributions after the game.
+- fast live scoring during a match
+- large tap targets for one-handed use
+- immediate undo when a stat is entered incorrectly
+- simple season history for players and coaches
 
-Not the target: professional teams (they use dedicated software), or pure casuals (they don't care about stats).
+The prototype is intentionally local-first. There is no backend, no login, and no sync in Phase 1.
 
----
+## Current prototype status
 
-## Core Use Case
+What is already represented in this repository today:
 
-**Live scoring during a match.** Volleyball is fast — post-match stat entry from memory is unreliable, especially for stats like digs and blocks. The primary flow is: open the app before the match, tap stats as they happen, review the summary after the final set.
+- onboarding flow for creating a team
+- roster management for adding and editing players
+- new match setup
+- live set-by-set scoring
+- per-player stat entry during a live match
+- undo support during live stat entry
+- match history and match detail views
+- player season summary views
+- local browser persistence through a storage abstraction
+- PWA packaging for installable, home-screen usage
+- automated tests with Vitest and Testing Library
 
-Post-match entry is supported as a fallback (e.g. for matches not tracked live), but it is not the primary UX.
+What this repository is not yet:
 
----
+- not a multi-user product
+- not backed by an API or database
+- not a native mobile app
+- not a rules-enforcement engine for substitutions, libero restrictions, or league-specific constraints
 
-## What Gets Tracked
+## Product shape
 
-### Match structure
+### Primary user
 
-Volleyball matches are best-of-3 or best-of-5 sets. Sets go to 25 points (win by 2), except the deciding set which goes to 15. Every set score is recorded.
+A player, captain, or bench teammate tracking stats courtside during a live match.
 
-### Player stats
+### Secondary user
 
-The standard stats that matter to players and coaches:
+A coach or teammate reviewing results and player output after the match.
 
-| Stat | Who it applies to |
-|---|---|
-| Kills / attack errors / attempts | Hitters (outside, opposite, middle) |
-| **Hitting efficiency** = (kills − errors) / attempts | Hitters |
-| Assists | Setter |
-| Aces / service errors | Everyone |
-| Digs | Libero, defenders |
-| Blocks (solo + assisted) | Hitters, middles |
-| Reception errors | Passers |
+### Core tracked stats
 
-**Hitting efficiency is first-class.** It is the single most meaningful attacking stat in volleyball and should always be displayed alongside raw kill counts.
+- kills
+- attack errors
+- attack attempts
+- assists
+- aces
+- service errors
+- digs
+- solo blocks
+- assisted blocks
+- reception errors
 
-### Explicitly out of scope (for now)
+Hitting efficiency is treated as a first-class derived stat:
 
-- Points per rally / rally-by-rally breakdown — too granular, too complex to enter live
-- Opponent individual player stats — we track our team, not theirs
-- Substitution details — sub counts may be noted but tracking which player went in/out is low priority
-- Timeouts — low priority
+$$
+\text{hitting efficiency} = \frac{\text{kills} - \text{attack errors}}{\text{attack attempts}}
+$$
 
----
+## Repository map
 
-## UX Principles
+```text
+.
+├── app/                  # Vite + React + TypeScript application
+│   ├── public/           # static assets, icons, 404 fallback
+│   ├── scripts/          # asset-generation helpers
+│   └── src/
+│       ├── components/   # reusable UI pieces
+│       ├── context/      # storage provider wiring
+│       ├── hooks/        # feature logic and state orchestration
+│       ├── screens/      # route-level mobile screens
+│       ├── storage/      # StorageService interface + localStorage implementation
+│       ├── test/         # test setup and mocks
+│       ├── types/        # shared app types
+│       └── utils/        # stat and summary helpers
+├── docs/
+│   ├── schema.md         # data model and future SQL direction
+│   ├── tdd-workpackages.md
+│   └── ui-design.md      # Phase 1 mobile UX direction
+├── project-idea.md       # product brief / future direction
+└── README.md             # repo-facing overview
+```
 
-These follow directly from the live scoring use case:
+## Tech stack
 
-- **Courtside-first:** large tap targets, minimal confirmation dialogs, operable one-handed with one eye on the game
-- **Fast undo:** mistakes happen during live entry; undo must be immediate and obvious
-- **Offline-first (Phase 2):** sports halls and recreational venues have poor connectivity; the app must work fully without a network connection
-- **Lightweight sharing:** after the match, share a summary (screenshot or link) to the team group chat — no social feed needed
+- React 19
+- TypeScript
+- Vite
+- React Router
+- Tailwind CSS v4
+- Vitest + Testing Library
+- vite-plugin-pwa
+- browser localStorage for persistence in Phase 1
 
----
+## Technical decisions
 
-## Phases
+### 1. Frontend-only prototype
 
-### Phase 1 — Web Prototype (React PWA)
+Phase 1 is deliberately frontend-only. All data lives in the browser so the team can validate the UX before committing to backend complexity.
 
-A React app with no backend, hosted on GitHub Pages. All data is stored in `localStorage`. Built as a PWA so it can be installed on a phone home screen — this makes it usable courtside and provides a real mobile test before committing to a native app.
+### 2. Storage abstraction before backend
 
-**Stack:**
-- React (UI)
-- `localStorage` for persistence, accessed only through a storage abstraction layer
-- PWA manifest + service worker for home screen install
-- GitHub Pages for hosting
+The app code does not talk directly to `localStorage` from every feature. Instead, it uses a storage service abstraction so Phase 2 can replace local persistence with API-backed storage without rewriting the entire UI.
 
-**Goals:**
-- Validate the live scoring UX — does it actually work courtside?
-- Prove out the data model (Match, Set, Team, Player, per-set stats)
-- Build something you can take to a real match and test
+### 3. Per-set stats model
 
-**Scope:**
-- Set up a team roster with player names and positions
-- Start a match, record set scores and per-player stats live
-- View match history and player stat summaries
-- Basic shareable match summary (screenshot-ready layout)
-- Indoor format only; no rule enforcement — record stats freely
-- Single-user only — one device, one team
+Stats are stored per player, per set, rather than only as match totals. That keeps match summaries and season aggregates accurate while preserving the structure of a volleyball match.
 
----
+### 4. PWA instead of native for Phase 1
 
-### Phase 2 — Cross-Platform Mobile App (Rebuild)
+The current build is installable and works like an app on a phone home screen. That is the cheapest way to test real match-day usage before building a native mobile version.
 
-A production mobile app for Android and iOS, rebuilt from scratch using a mobile-first stack. Phase 1 code is not carried over — only the data model and UX learnings are.
+### 5. Static hosting
 
-**Goals:**
-- Ship a polished, native-feeling mobile experience
-- Support a team: one person records, everyone can view
-- Offline-first with background sync
+The app is built as static assets and deployed to GitHub Pages. That keeps hosting simple, cheap, and aligned with a browser-only prototype.
 
-**Stack:**
-- React Native or Flutter (to be decided after Phase 1)
-- REST API backend
-- Relational database (schema derived from the Phase 1 data model)
+## Product decisions
 
-**Scope:**
-- Everything from Phase 1, rebuilt for mobile
-- Team accounts: email + password + 2FA login; join a team via a regeneratable team code
-- One designated recorder per match; other team members can view in real time
-- Offline-first; data syncs in the background when connection is restored
-- Optimistic updates with server-side conflict resolution
+These decisions currently shape the prototype:
+
+- indoor volleyball first
+- team-focused tracking, not opponent player analytics
+- live scoring is the primary workflow
+- hitting efficiency must always be easy to access
+- record stats, do not enforce league rules
+- single team, single device, single recorder in Phase 1
+
+## Future direction
+
+The long-term plan is a Phase 2 mobile product, but the repo is designed so the data model and product decisions survive even if the UI is rebuilt.
+
+### Planned product capabilities
+
+- team accounts and member access
+- one designated recorder with others viewing live
+- offline-first sync and conflict handling
+- cross-platform mobile app
 - CSV export for coaches
+- better backup and recovery than browser-only storage
 
----
+### Likely architecture shift in Phase 2
 
-## Architecture
+- mobile client separate from backend
+- API-backed persistence instead of browser-only storage
+- relational schema for teams, players, matches, sets, and player set stats
+- authentication plus team invite or team-code flows
 
-### Phase 1
+The current leaning is to carry forward the data model and UX learnings, not necessarily the full Phase 1 UI codebase.
 
-```
-Browser (React PWA)
-  └── UI Components
-  └── Storage Service  ← abstraction layer; swappable in Phase 2
-        └── localStorage
-```
+## Running locally
 
-The storage service is the only place that touches `localStorage`. Everything else in the app calls the service. This makes the Phase 2 migration to an API-backed service a localised change.
+From the repository root:
 
-### Phase 2
-
-```
-Mobile App (React Native or Flutter)
-  └── UI Components
-  └── Storage Service  ← same interface, now backed by API + local cache
-        └── Local cache (offline-first)
-        └── REST API  ←→  Backend
-                           └── Database (relational)
+```bash
+cd app
+npm install
+npm run dev
 ```
 
-**Auth:** Email + password + 2FA. Users join a team via a team code (regeneratable by the team owner). No OAuth.
+Then open the local Vite URL shown in the terminal.
 
----
+Other useful commands:
 
-## Phase 1 → Phase 2 Continuity
+```bash
+cd app
+npm run test
+npm run test:watch
+npm run build
+npm run preview
+```
 
-**Decision: Option B — Rebuild.**
+## How it is hosted
 
-Phase 1 is a throwaway prototype. The Phase 2 mobile app is built from scratch with a mobile-first stack. What carries over:
+This repository is configured for GitHub Pages hosting.
 
-- The **data model** (`Match`, `Set`, `Team`, `Player`, `PlayerSetStats`) — defined before Phase 1 development starts and treated as a stable contract
-- UX patterns validated in Phase 1 (which flows worked, what was awkward courtside)
-- The **storage service interface** — Phase 2 implements the same interface against an API instead of `localStorage`
+- the production build is generated from the app directory
+- Vite uses a repository base path of `/volleyball-gamestats/`
+- deployment publishes the built `app/dist` output to the `gh-pages` branch
+- a GitHub Actions workflow runs the build and deploys on pushes to `main`
 
-What does not carry over: React components, routing, styling, or any browser-specific code.
+There is also an npm deploy script in the app for manual deployment if needed.
 
----
+## Static hosting and SSG basics
 
-## Future Product Features
+This project is close to static-site deployment, but it is important to use the right terms.
 
-Ideas worth noting for after Phase 2 ships — not in scope now, but they inform design decisions:
+### Static site hosting
 
-- **Beach volleyball format** — 2-player teams, sets to 21, no libero/setter roles; a separate recording mode, not a configuration option
-- **Season and tournament management** — group matches into a season or bracket; season standings, win/loss record, aggregate player stats over a season
-- **Opponent scouting** — build a profile of recurring opponents across matches; track their tendencies over time
-- **Rotation tracking** — know which serve rotation the team is in during a set; useful for post-match tactical review
-- **Serve receive heatmap** — visualise which zones on the court are targeted and how reception performs by zone
-- **Set-by-set momentum charts** — show point run data within a set to identify turning points
-- **Match video linking** — attach a recording URL to a match and timestamp key events to the video
-- **Coaching notes** — free-text notes per match or per set, visible only to the coach/captain
-- **Push notifications** (Phase 2+) — notify teammates when a match starts or when they're on deck to serve
-- **Wearable companion** — Apple Watch or equivalent for single-tap stat entry, removing the need to look at the phone
-- **Public team pages** — opt-in shareable page showing a team's season stats; useful for club websites
+Static hosting means a host serves prebuilt files such as HTML, CSS, JavaScript, images, and a web app manifest. There is no always-on application server generating pages for each request.
 
----
+That is exactly how this prototype is deployed.
 
-## Open Product Questions
+### Static site generator (SSG)
 
+An SSG is a tool that pre-renders pages at build time, usually from templates, routes, markdown content, or CMS data. Typical examples are documentation sites, blogs, and marketing sites.
+
+### What this repo is
+
+This repo is not a classic static site generator project. It is a client-rendered React app that builds to static files.
+
+<<<<<<< HEAD
 - **Indoor vs beach volleyball?** Beach is 2-player, no setter role, no libero, sets to 21, completely different stats profile. Should the app support both formats, or start indoor-only? *(Lean: indoor only for Phase 1)*
 ANS: only Indoor
  
@@ -203,14 +235,31 @@ no libero system require for now
 
 - **Data loss risk in Phase 1:** If Phase 1 stores everything in browser local storage, clearing the browser wipes all match history. Is there a minimum export or backup mechanism needed, or is that acceptable for a prototype?
 good to have CSV like minum export 
+=======
+In practice that means:
+>>>>>>> 469e370 (markdown updated)
 
----
+- Vite bundles the app into static assets
+- GitHub Pages serves those files
+- React Router handles navigation in the browser
+- browser storage holds the app data
 
-## Open Technical Questions
+So the deployment model is static, but the application model is a single-page app rather than an SSG-generated site.
 
-- **Mobile framework for Phase 2:** React Native or Flutter? Both are viable. Decision deferred until Phase 1 UX is validated — the choice matters less than getting the data model right first.
-- **PWA ceiling:** Phase 1 is a PWA installable on a phone home screen. If the PWA experience turns out to be good enough, does Phase 2 still need to be a native app? Define the threshold (e.g. push notifications, background sync, app store distribution) that would trigger a native build.
-- **Storage abstraction interface:** The service interface needs to be designed before Phase 1 coding starts. It should be async-first (so the Phase 2 API implementation doesn't require changing call sites) and should not expose any `localStorage`-specific concepts.
-- **Conflict resolution strategy for Phase 2:** If a match is edited on two devices while offline, how is the conflict resolved on sync? Last-write-wins is simplest; event-log / CRDT approach is more correct but significantly more complex.
+## Documentation
 
+If you want to go deeper than the README:
 
+- `project-idea.md` contains the broader product brief and open questions
+- `docs/schema.md` documents the current data model and a future SQL shape
+- `docs/ui-design.md` captures the Phase 1 mobile-first UX direction
+
+## Suggested document split
+
+The existing markdown files are useful, but they are serving the same purpose today. A cleaner structure is:
+
+- `README.md` for current repo status, setup, hosting, and technical summary
+- `project-idea.md` for product vision, future roadmap, and open questions
+- `docs/` for deeper implementation references
+
+That split keeps the repository approachable for a new reader without losing the long-term thinking behind the project.
